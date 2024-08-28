@@ -1,7 +1,23 @@
 const express = require("express");
 
 const helmet = require("helmet");
+const path = require("path");
+const cors = require("cors");
+
 const app = express();
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+const clientBuildPath = path.join(__dirname, "../client/build");
+console.log("client build path", clientBuildPath);
+
+app.use(express.static(clientBuildPath));
+
 app.use(helmet());
 
 require("dotenv").config(); // loads the environment variables from a .env file into process.env
@@ -29,6 +45,10 @@ app.use("/api/movies", moviesRouter);
 app.use("/api/theatres", theatreRouter);
 app.use("/api/shows", showRouter);
 app.use("/api/bookings", bookingRouter);
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(clientBuildPath, "index.html"));
+});
 
 app.listen(8082, () => {
   console.log("Server is running at port 8082");
