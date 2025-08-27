@@ -89,8 +89,27 @@ const TheatreForm = ({
                   name="email"
                   rules={[{ required: true, message: "Email is required!" }]}
                 >
-                  <Input type="email" placeholder="Enter the email" />
+                  <Input 
+                    type="email" 
+                    placeholder="Enter the email" 
+                    disabled={formType === "edit"}
+                    style={formType === "edit" ? { 
+                      backgroundColor: "#f5f5f5", 
+                      color: "#666666",
+                      cursor: "not-allowed"
+                    } : {}}
+                  />
                 </Form.Item>
+                {formType === "edit" && (
+                  <div style={{ 
+                    fontSize: "12px", 
+                    color: "#999", 
+                    marginTop: "-16px", 
+                    marginBottom: "16px" 
+                  }}>
+                    Email cannot be changed for security reasons
+                  </div>
+                )}
               </Col>
 
               <Col span={12}>
