@@ -155,7 +155,15 @@ const SingleMovie = () => {
                               <li
                                 key={singleShow._id}
                                 onClick={() => {
-                                  navigate(`/book-show/${singleShow._id}`);
+                                  // Store show data in session storage instead of URL
+                                  sessionStorage.setItem('selectedShow', JSON.stringify({
+                                    showId: singleShow._id,
+                                    movieTitle: movie.title,
+                                    theatreName: theatre.name,
+                                    showTime: singleShow.time,
+                                    showDate: date
+                                  }));
+                                  navigate(`/book-show`);
                                 }}
                                 style={{
                                   cursor: "pointer"

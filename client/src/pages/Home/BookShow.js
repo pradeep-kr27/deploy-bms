@@ -63,6 +63,8 @@ const CheckoutForm = ({ amount, onPaymentSuccess, selectedSeats, show, user }) =
 
         if (bookingResponse.success) {
           message.success(bookingResponse.message);
+          // Clear session storage after successful booking
+          sessionStorage.removeItem('selectedShow');
           navigate("/profile");
         } else {
           message.error(bookingResponse.message);
@@ -123,14 +125,24 @@ const BookShow = () => {
   const dispatch = useDispatch(); // Redux dispatch function
   const [show, setShow] = useState(); // State for holding show details
   const [selectedSeats, setSelectedSeats] = useState([]); // State for managing selected seats
-  const params = useParams(); // Extracting URL parameters
   const navigate = useNavigate(); // Navigation hook
 
   // Function to fetch show data by ID
   const getData = async () => {
     try {
+      // Get show data from session storage
+      const storedShowData = sessionStorage.getItem('selectedShow');
+      
+      if (!storedShowData) {
+        message.error('No show selected. Please select a show first.');
+        navigate('/');
+        return;
+      }
+
+      const { showId } = JSON.parse(storedShowData);
+
       dispatch(ShowLoading()); // Dispatching action to show loading state
-      const response = await getShowById({ showId: params.id }); // API call to fetch show details
+      const response = await getShowById({ showId }); // API call to fetch show details
       if (response.success) {
         setShow(response.data); // Setting state with fetched show data
         // message.success(response.message); // Optional success message
