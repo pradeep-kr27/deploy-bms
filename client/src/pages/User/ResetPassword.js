@@ -1,19 +1,25 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Form, Input } from "antd";
 import { ResetPassword } from "../../api/users";
 import { message } from "antd";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 function Reset() {
-  const { email } = useParams(); // Extract email from URL parameters
-  console.log("email", email);
+  const { email: urlEmail } = useParams(); // Extract email from URL parameters (old approach)
+  const location = useLocation(); // Get state from navigation (new approach)
   const navigate = useNavigate();
+  const [isValidSession, setIsValidSession] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  
   const onFinish = async (values) => {
     try {
-      const response = await ResetPassword(values, email);
+      const response = await ResetPassword(values, userEmail);
       if (response.success) {
         message.success(response.message);
-        // window.location.href = "/login";
+        // Clear the session flag and redirect
+        sessionStorage.removeItem('resetPasswordSession');
+        sessionStorage.removeItem('resetPasswordEmail');
+        sessionStorage.removeItem('resetPasswordTimestamp');
         navigate("/login");
       } else {
         message.error(response.message);
@@ -22,11 +28,76 @@ function Reset() {
       message.error(error.message);
     }
   };
+
   useEffect(() => {
+    // Check if user is already logged in
     if (localStorage.getItem("token")) {
       navigate("/");
+      return;
     }
-  }, []);
+
+    // Try to get email from different sources
+    let emailToUse = '';
+    
+    // Method 1: From navigation state (new secure approach)
+    if (location.state?.email && location.state?.fromForgetPassword) {
+      emailToUse = location.state.email;
+    }
+    // Method 2: From URL parameter (old approach, but validate session)
+    else if (urlEmail) {
+      emailToUse = decodeURIComponent(urlEmail);
+    }
+    // Method 3: From session storage
+    else {
+      emailToUse = sessionStorage.getItem('resetPasswordEmail');
+    }
+
+    // Check if user came from forget password page
+    const resetSession = sessionStorage.getItem('resetPasswordSession');
+    const sessionEmail = sessionStorage.getItem('resetPasswordEmail');
+    const timestamp = sessionStorage.getItem('resetPasswordTimestamp');
+    
+    if (!resetSession || !sessionEmail) {
+      message.error("Invalid access. Please use the forgot password flow.");
+      navigate("/forget");
+      return;
+    }
+
+    // Check if session is not too old (30 minutes)
+    if (timestamp && (Date.now() - parseInt(timestamp)) > 30 * 60 * 1000) {
+      message.error("Session expired. Please request a new OTP.");
+      sessionStorage.clear();
+      navigate("/forget");
+      return;
+    }
+
+    // Verify the email matches the session
+    if (!emailToUse || sessionEmail !== emailToUse) {
+      message.error("Invalid email parameter.");
+      navigate("/forget");
+      return;
+    }
+
+    setUserEmail(emailToUse);
+    setIsValidSession(true);
+    console.log("Using email:", emailToUse);
+  }, [urlEmail, location, navigate]);
+
+  // Only render the form if session is valid
+  if (!isValidSession) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px'
+      }}>
+        Validating access...
+      </div>
+    );
+  }
+
   return (
     <>
       <header className="App-header">

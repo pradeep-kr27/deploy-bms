@@ -73,6 +73,7 @@ function App() {
             ></Route>
             <Route path="/forget" element={<Forget />} />
             <Route path="/reset/:email" element={<Reset />} />
+            <Route path="/reset" element={<Reset />} />
           </Routes>
         </BrowserRouter>
       </div>

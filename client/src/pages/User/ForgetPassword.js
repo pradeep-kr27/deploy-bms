@@ -14,9 +14,20 @@ function Forget() {
       console.log('ress',response)
       if (response.success) {
         message.success(response.message);
+        
+        // Set session storage to track valid reset password flow
+        sessionStorage.setItem('resetPasswordSession', 'true');
+        sessionStorage.setItem('resetPasswordEmail', values.email);
+        sessionStorage.setItem('resetPasswordTimestamp', Date.now().toString());
+        
         alert("OTP sent to your email");
-        // window.location.href = "/reset";
-        navigate(`/reset/${encodeURIComponent(values.email)}`);
+        // Navigate without email in URL for better security
+        navigate('/reset', { 
+          state: { 
+            email: values.email,
+            fromForgetPassword: true 
+          } 
+        });
       } else {
         message.error(response.message);
       }
