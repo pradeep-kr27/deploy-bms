@@ -5,8 +5,117 @@ import { getShowById } from "../../api/shows";
 import { useNavigate, useParams } from "react-router-dom";
 import { message, Card, Row, Col, Button } from "antd";
 import moment from "moment";
-import StripeCheckout from "react-stripe-checkout"; // Stripe Checkout
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { bookShow, makePayment } from "../../api/booking";
+
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+
+// Checkout Form Component
+const CheckoutForm = ({ amount, onPaymentSuccess, selectedSeats, show, user }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsLoading(true);
+    dispatch(ShowLoading());
+
+    const cardElement = elements.getElement(CardElement);
+
+    try {
+      // Create payment method
+      const { error, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+      });
+
+      if (error) {
+        message.error(error.message);
+        setIsLoading(false);
+        dispatch(HideLoading());
+        return;
+      }
+
+      // Create payment intent on server
+      const response = await makePayment(
+        paymentMethod,
+        amount
+      );
+
+      if (response.success) {
+        message.success(response.message);
+        // Book the show
+        const bookingResponse = await bookShow({
+          show: show._id,
+          transactionId: response.data,
+          seats: selectedSeats,
+          user: user._id,
+        });
+
+        if (bookingResponse.success) {
+          message.success(bookingResponse.message);
+          navigate("/profile");
+        } else {
+          message.error(bookingResponse.message);
+        }
+      } else {
+        message.error(response.message);
+      }
+    } catch (err) {
+      console.log(err);
+      message.error("Payment failed. Please try again.");
+    }
+
+    setIsLoading(false);
+    dispatch(HideLoading());
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="max-width-600 mx-auto">
+      <div style={{ 
+        padding: '20px', 
+        border: '1px solid #d9d9d9', 
+        borderRadius: '6px', 
+        marginBottom: '20px',
+        backgroundColor: '#fafafa'
+      }}>
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#424770',
+                '::placeholder': {
+                  color: '#aab7c4',
+                },
+              },
+            },
+          }}
+        />
+      </div>
+      <Button 
+        type="primary" 
+        htmlType="submit" 
+        loading={isLoading}
+        disabled={!stripe || isLoading}
+        block
+        size="large"
+        shape="round"
+      >
+        {isLoading ? 'Processing...' : `Pay Rs. ${amount / 100}`}
+      </Button>
+    </form>
+  );
+};
 
 const BookShow = () => {
   // Redux state and hooks
@@ -117,46 +226,6 @@ const BookShow = () => {
     getData();
   }, []);
 
-  const onToken = async (token) => {
-    console.log(token);
-    try {
-      dispatch(ShowLoading());
-      const response = await makePayment(
-        token,
-        selectedSeats.length * show.ticketPrice * 100
-      );
-      if (response.success) {
-        message.success(response.message);
-        book(response.data);
-      } else {
-        message.error(response.message);
-      }
-      dispatch(HideLoading());
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  const book = async (transactionId) => {
-    try {
-      const response = await bookShow({
-        show: show._id,
-        transactionId,
-        seats: selectedSeats,
-        user: user._id,
-      });
-      if (response.success) {
-        message.success(response.message);
-        navigate("/profile");
-      } else {
-        message.error(response.message);
-      }
-      dispatch(HideLoading());
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
   // JSX rendering
   return (
     <>
@@ -196,18 +265,14 @@ const BookShow = () => {
             >
               {getSeats()} {/* Rendering dynamic seat layout */}
               {selectedSeats.length > 0 && (
-                <StripeCheckout
-                  token={onToken}
-                  billingAddress
-                  amount={selectedSeats.length * show.ticketPrice * 100}
-                  stripeKey="pk_test_51PY5CiRteLJygSvEwi4Zd4R5ZKaKdY8VktV02VTgbK0KA7ATkaEpsK33AmpNQvIYJIZBnbpJuKUO3QG78eFkTH9B00Wyjxc4NL"
-                >
-                  <div className="max-width-600 mx-auto">
-                    <Button type="primary" shape="round" size="large" block>
-                      Pay Now
-                    </Button>
-                  </div>
-                </StripeCheckout>
+                <Elements stripe={stripePromise}>
+                  <CheckoutForm
+                    amount={selectedSeats.length * show.ticketPrice * 100}
+                    selectedSeats={selectedSeats}
+                    show={show}
+                    user={user}
+                  />
+                </Elements>
               )}
             </Card>
           </Col>

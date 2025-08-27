@@ -11,7 +11,7 @@
  */
 
 const router = require("express").Router();
-const stripe = require("stripe")(process.env.STRIPE_KEY);
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const authMiddleware = require("../middlewares/authMiddleware");
 const Booking = require("../models/bookingModel");
 const Show = require("../models/showModel");
@@ -19,19 +19,15 @@ const EmailHelper = require("../utils/emailHelper");
 
 router.post("/make-payment", authMiddleware, async (req, res) => {
   try {
-    const { token, amount } = req.body;
-    const customer = await stripe.customers.create({
-      email: token.email,
-      source: token.id,
-    });
+    const { paymentMethod, amount } = req.body;
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
-      currency: "usd",
-      customer: customer.id,
-      payment_method_types: ["card"],
-      receipt_email: token.email,
-      description: "Movie Ticket Booking",
+      currency: "inr", // Changed to INR for Indian Rupees
+      payment_method: paymentMethod.id,
       confirm: true,
+      return_url: `${process.env.CLIENT_URL}/profile`,
+      description: "Movie Ticket Booking",
     });
 
     const transactionId = paymentIntent.id;

@@ -33,16 +33,16 @@ userRouter.post("/register", async (req, res) => {
   }
 });
 
-async function hashPassword(password) {
-  console.time("time taken");
-  const salt = await bcrypt.genSalt(14);
-  console.log("salt", salt);
-  const hashedPassword = await bcrypt.hash(password, salt);
-  console.log("hashedPassword", hashedPassword);
-  console.timeEnd("time taken");
-  console.log("**************");
-  return hashedPassword;
-}
+// async function hashPassword(password) {
+//   console.time("time taken");
+//   const salt = await bcrypt.genSalt(14);
+//   console.log("salt", salt);
+//   const hashedPassword = await bcrypt.hash(password, salt);
+//   console.log("hashedPassword", hashedPassword);
+//   console.timeEnd("time taken");
+//   console.log("**************");
+//   return hashedPassword;
+// }
 
 userRouter.post("/login", async (req, res) => {
   try {
@@ -58,8 +58,6 @@ userRouter.post("/login", async (req, res) => {
     if (!isMatch) {
       return res.send({ success: false, message: "Invalid password" });
     }
-    const password = "Ayush@123";
-    hashPassword(password);
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
@@ -137,7 +135,11 @@ userRouter.patch("/resetpassword/:email", async (req, res) => {
         .status(401)
         .json({ success: false, message: "OTP has expired" });
     }
-    user.password = resetDetails.password;
+    
+    // Hash the new password before saving
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(resetDetails.password, saltRounds);
+    user.password = hashedPassword;
     user.otp = undefined;
     user.otpExpiry = undefined;
 

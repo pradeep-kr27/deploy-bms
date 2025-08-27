@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 const path = require("path");
 dotenv.config();
 
-const { SENDGRID_API_KEY } = process.env;
+const { SENDGRID_API_KEY, SENDGRID_FROM_EMAIL } = process.env;
 
 function replaceContent(content, creds) {
   // creds = {name:"John", otp:1234}
@@ -21,7 +21,7 @@ async function EmailHelper(templateName, receiverEmail, creds) {
     const content = await fs.promises.readFile(templatePath, "utf-8");
     const emailDetails = {
       to: receiverEmail,
-      from: "mrinal.bhattacharya@scaler.com",
+      from:  SENDGRID_FROM_EMAIL,
       subject: "Mail from ScalerShows",
       text: `Hi ${creds.name}, Your OTP is ${creds.otp}`,
       html: replaceContent(content, creds),
@@ -29,6 +29,7 @@ async function EmailHelper(templateName, receiverEmail, creds) {
     const transportDetails = {
       host: "smtp.sendgrid.net",
       port: 587,
+      // service: 'gmail',
       auth: {
         user: "apikey",
         pass: SENDGRID_API_KEY,
