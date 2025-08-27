@@ -108,7 +108,7 @@ userRouter.patch("/forgetpassword", async (req, res) => {
     await EmailHelper("otp.html", user.email, { name: user.name, otp: otp });
     res
       .status(200)
-      .json({ status: "success", message: "OTP sent to your email" });
+      .json({ success: true, message: "OTP sent to your email" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ success: false, message: err.message });
@@ -147,7 +147,7 @@ userRouter.patch("/resetpassword/:email", async (req, res) => {
 
     res
       .status(200)
-      .json({ status: "success", message: "Password reset successful" });
+      .json({ success: true, message: "Password reset successful" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ success: false, message: err.message });
