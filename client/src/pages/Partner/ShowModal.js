@@ -252,19 +252,23 @@ const ShowModal = ({
               >
                 <Col span={8}>
                   <Form.Item
-                    label="Show Name"
-                    htmlFor="name"
-                    name="name"
+                    label="Select the Movie"
+                    htmlFor="movie"
+                    name="movie"
                     className="d-block"
-                    rules={[
-                      { required: true, message: "Show name is required!" },
-                    ]}
+                    rules={[{ required: true, message: "Movie  is required!" }]}
                   >
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="Enter the show name"
-                    ></Input>
+                    <Select
+                      id="movie"
+                      placeholder="Select Movie"
+                      defaultValue={selectedMovie && selectedMovie.title}
+                      style={{ width: "100%", height: "45px" }}
+                      options={movies && movies.map((movie) => ({
+                        key: movie._id,
+                        value: movie._id,
+                        label: movie.title,
+                      }))}
+                    />
                   </Form.Item>
                 </Col>
                 <Col span={8}>
@@ -275,12 +279,39 @@ const ShowModal = ({
                     className="d-block"
                     rules={[
                       { required: true, message: "Show date is required!" },
+                      ({ getFieldValue }) => ({
+                        validator: (_, value) => {
+                          if (!value) return Promise.resolve();
+                          
+                          const selectedMovieId = getFieldValue('movie');
+                          
+                          if (!selectedMovieId) {
+                            return Promise.reject(new Error('Please select a movie first!'));
+                          }
+                          
+                          // Find the selected movie from the movies array
+                          const selectedMovieData = movies && movies.find(movie => movie._id === selectedMovieId);
+                          
+                          if (selectedMovieData) {
+                            const showDate = moment(value);
+                            const movieReleaseDate = moment(selectedMovieData.releaseDate).startOf('day');
+                            
+                            if (showDate.isBefore(movieReleaseDate)) {
+                              return Promise.reject(new Error(`Show date cannot be before movie release date (${movieReleaseDate.format('MMM Do YYYY')})!`));
+                            }
+                          }
+                          
+                          return Promise.resolve();
+                        }
+                      })
                     ]}
+                    dependencies={['movie']} // Re-validate when movie selection changes
                   >
                     <Input
                       id="date"
                       type="date"
                       placeholder="Enter the show date"
+                      min={moment().format("YYYY-MM-DD")}
                     ></Input>
                   </Form.Item>
                 </Col>
@@ -292,12 +323,43 @@ const ShowModal = ({
                     className="d-block"
                     rules={[
                       { required: true, message: "Show time is required!" },
+                      ({ getFieldValue }) => ({
+                        validator: (_, value) => {
+                          if (!value) return Promise.resolve();
+                          
+                          const selectedDate = getFieldValue('date');
+                          
+                          if (!selectedDate) {
+                            return Promise.reject(new Error('Please select a show date first!'));
+                          }
+                          
+                          const showDate = moment(selectedDate);
+                          const today = moment().startOf('day');
+                          
+                          // If the selected date is today
+                          if (showDate.isSame(today, 'day')) {
+                            const showTime = moment(value, 'HH:mm');
+                            const currentTime = moment();
+                            const minimumTime = currentTime.add(1, 'hour');
+                            
+                            // Create full datetime for comparison
+                            const showDateTime = moment(`${selectedDate} ${value}`, 'YYYY-MM-DD HH:mm');
+                            
+                            if (showDateTime.isBefore(minimumTime)) {
+                              return Promise.reject(new Error(`Show time must be at least 1 hour from now (after ${minimumTime.format('HH:mm')})!`));
+                            }
+                          }
+                          
+                          return Promise.resolve();
+                        }
+                      })
                     ]}
+                    dependencies={['date']} // Re-validate when date selection changes
                   >
                     <Input
                       id="time"
                       type="time"
-                      placeholder="Enter the show date"
+                      placeholder="Enter the show time"
                     ></Input>
                   </Form.Item>
                 </Col>
@@ -314,23 +376,19 @@ const ShowModal = ({
               >
                 <Col span={8}>
                   <Form.Item
-                    label="Select the Movie"
-                    htmlFor="movie"
-                    name="movie"
+                    label="Show Name"
+                    htmlFor="name"
+                    name="name"
                     className="d-block"
-                    rules={[{ required: true, message: "Movie  is required!" }]}
+                    rules={[
+                      { required: true, message: "Show name is required!" },
+                    ]}
                   >
-                    <Select
-                      id="movie"
-                      placeholder="Select Movie"
-                      defaultValue={selectedMovie && selectedMovie.title}
-                      style={{ width: "100%", height: "45px" }}
-                      options={movies.map((movie) => ({
-                        key: movie._id,
-                        value: movie._id,
-                        label: movie.title,
-                      }))}
-                    />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Enter the show name"
+                    ></Input>
                   </Form.Item>
                 </Col>
                 <Col span={8}>
