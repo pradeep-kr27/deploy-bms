@@ -13,6 +13,7 @@ const SingleMovie = () => {
   const [movie, setMovie] = useState();
   const [date, setDate] = useState(moment().format("YYYY-MM-DD"));
   const [theatres, setTheatres] = useState([]);
+  const [isTheatresLoading, setIsTheatresLoading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -40,6 +41,7 @@ const SingleMovie = () => {
   const getAllTheatres = async () => {
     console.log("fetching theatres");
     try {
+      setIsTheatresLoading(true);
       dispatch(ShowLoading());
       const response = await getAllTheatresByMovie({ movie: params.id, date });
       if (response.success) {
@@ -48,9 +50,11 @@ const SingleMovie = () => {
         message.error(response.message);
       }
       dispatch(HideLoading());
+      setIsTheatresLoading(false);
     } catch (err) {
       console.log(err);
       dispatch(HideLoading());
+      setIsTheatresLoading(false);
     }
   };
 
@@ -100,10 +104,18 @@ const SingleMovie = () => {
             </div>
           </div>
         )}
-        {theatres.length == 0 && (
+        {theatres.length == 0 && !isTheatresLoading && (
           <div className="pt-3">
             <h2 className="blue-clr">
               Currently, no theatres available for this movie!
+            </h2>
+          </div>
+        )}
+
+        {isTheatresLoading && (
+          <div className="pt-3">
+            <h2 className="blue-clr">
+              Loading theatres...
             </h2>
           </div>
         )}
