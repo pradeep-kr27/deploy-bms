@@ -87,9 +87,20 @@ const MovieForm = ({
                   name="duration"
                   rules={[
                     { required: true, message: "Movie duration is required!" },
+                    { 
+                      type: 'number',
+                      min: 30,
+                      max: 300,
+                      message: 'Movie duration must be between 30 and 300 minutes!'
+                    }
                   ]}
                 >
-                  <Input type="number" placeholder="Enter the movie duration" />
+                  <Input 
+                    type="number" 
+                    placeholder="Enter the movie duration"
+                    min={30}
+                    max={300}
+                  />
                 </Form.Item>
               </Col>
               <Col span={8}>
@@ -122,9 +133,23 @@ const MovieForm = ({
                       required: true,
                       message: "Movie Release Date is required!",
                     },
+                    {
+                      validator: (_, value) => {
+                        if (!value) return Promise.resolve();
+                        const selectedDate = moment(value);
+                        const today = moment().startOf('day');
+                        if (selectedDate.isBefore(today)) {
+                          return Promise.reject(new Error('Release date cannot be in the past!'));
+                        }
+                        return Promise.resolve();
+                      }
+                    }
                   ]}
                 >
-                  <Input type="date" />
+                  <Input 
+                    type="date" 
+                    min={moment().format("YYYY-MM-DD")}
+                  />
                 </Form.Item>
               </Col>
             </Row>
