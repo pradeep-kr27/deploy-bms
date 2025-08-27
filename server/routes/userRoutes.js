@@ -103,7 +103,7 @@ userRouter.patch("/forgetpassword", async (req, res) => {
     }
     const otp = otpGenerator(); // 123456
     user.otp = otp;
-    user.otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    user.otpExpiry = Date.now() + 1 * 60 * 1000; // 10 minutes
     await user.save();
     await EmailHelper("otp.html", user.email, { name: user.name, otp: otp });
     res
@@ -134,6 +134,13 @@ userRouter.patch("/resetpassword/:email", async (req, res) => {
       return res
         .status(401)
         .json({ success: false, message: "OTP has expired" });
+    }
+    
+    // Validate if the provided OTP matches the stored OTP
+    if (user.otp !== resetDetails.otp) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid OTP" });
     }
     
     // Hash the new password before saving
