@@ -19,7 +19,15 @@ const ProtectedRoute = ({ children }) => {
   const { Header, Content, Footer, Sider } = Layout;
   const navItems = [
     {
-      label: "Home",
+      label: (
+        <span
+          onClick={() => {
+            navigate("/");
+          }}
+        >
+          Home
+        </span>
+      ),
       icon: <HomeOutlined />,
     },
     {
@@ -30,11 +38,15 @@ const ProtectedRoute = ({ children }) => {
           label: (
             <span
               onClick={() => {
-                if (user.role === "admin") {
+                console.log("Profile clicked, user:", user);
+                if (user?.role === "admin") {
+                  console.log("Navigating to admin");
                   navigate("/admin");
-                } else if (user.role === "partner") {
+                } else if (user?.role === "partner") {
+                  console.log("Navigating to partner");
                   navigate("/partner");
                 } else {
+                  console.log("Navigating to profile");
                   navigate("/profile");
                 }
               }}

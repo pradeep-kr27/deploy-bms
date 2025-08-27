@@ -14,6 +14,11 @@ const Bookings = () => {
 
   const getData = async () => {
     try {
+      if (!user || !user._id) {
+        console.log("User not loaded yet, skipping booking fetch");
+        return;
+      }
+      
       dispatch(ShowLoading());
       const response = await getAllBookings({ userId: user._id });
       if (response.success) {
@@ -31,8 +36,10 @@ const Bookings = () => {
   };
 
   useEffect(() => {
-    getData();
-  }, []);
+    if (user && user._id) {
+      getData();
+    }
+  }, [user]);
 
   return (
     <>
