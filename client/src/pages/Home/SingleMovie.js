@@ -17,6 +17,12 @@ const SingleMovie = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Function to check if a show is in the past
+  const isShowInPast = (showDate, showTime) => {
+    const showDateTime = moment(`${showDate} ${showTime}`, "YYYY-MM-DD HH:mm");
+    return showDateTime.isBefore(moment());
+  };
+
   const handleDate = (e) => {
     setDate(moment(e.target.value).format("YYYY-MM-DD"));
     navigate(`/movie/${params.id}?date=${e.target.value}`);
@@ -99,6 +105,7 @@ const SingleMovie = () => {
                   prefix={<CalendarOutlined />}
                   onChange={handleDate}
                   value={date}
+                  min={moment().format("YYYY-MM-DD")}
                 />
               </div>
             </div>
@@ -134,6 +141,11 @@ const SingleMovie = () => {
                     <Col xs={{ span: 24 }} lg={{ span: 16 }}>
                       <ul className="show-ul">
                         {theatre.shows
+                          .filter((singleShow) => {
+                            const isPastShow = isShowInPast(singleShow.date, singleShow.time);
+                            // Only show future shows
+                            return !isPastShow;
+                          })
                           .sort(
                             (a, b) =>
                               moment(a.time, "HH:mm") - moment(b.time, "HH:mm")
@@ -145,6 +157,10 @@ const SingleMovie = () => {
                                 onClick={() => {
                                   navigate(`/book-show/${singleShow._id}`);
                                 }}
+                                style={{
+                                  cursor: "pointer"
+                                }}
+                                title="Click to book tickets"
                               >
                                 {moment(singleShow.time, "HH:mm").format(
                                   "hh:mm A"
