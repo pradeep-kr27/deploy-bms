@@ -11,6 +11,14 @@ function Reset() {
   const [isValidSession, setIsValidSession] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   
+  const handleLoginRedirect = () => {
+    // Clear reset password session when user goes to login
+    sessionStorage.removeItem('resetPasswordSession');
+    sessionStorage.removeItem('resetPasswordEmail');
+    sessionStorage.removeItem('resetPasswordTimestamp');
+    navigate('/login');
+  };
+
   const onFinish = async (values) => {
     try {
       const response = await ResetPassword(values, userEmail);
@@ -145,6 +153,21 @@ function Reset() {
                 </Button>
               </Form.Item>
             </Form>
+            <div style={{ marginTop: "1rem" }}>
+              <p>
+                Remember your password?{" "}
+                <span 
+                  onClick={handleLoginRedirect}
+                  style={{ 
+                    color: "#1890ff", 
+                    cursor: "pointer", 
+                    textDecoration: "underline" 
+                  }}
+                >
+                  Login here
+                </span>
+              </p>
+            </div>
           </section>
         </main>
       </header>
